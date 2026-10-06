@@ -38,14 +38,17 @@ setup:
 	@./scripts/setup_env.sh
 
 vmlinux:
-	@if [ ! -f /sys/kernel/btf/vmlinux ]; then \
-		echo "[!] Error: /sys/kernel/btf/vmlinux not found. Is BTF enabled?"; \
-		exit 1; \
-	fi
 	@mkdir -p bpf/headers
-	@echo "[*] Extracting vmlinux.h from /sys/kernel/btf/vmlinux..."
-	$(BPFTOOL) btf dump file /sys/kernel/btf/vmlinux format c > bpf/headers/vmlinux.h
-	@echo "[✓] bpf/headers/vmlinux.h generated."
+	@if [ -f /sys/kernel/btf/vmlinux ] && command -v $(BPFTOOL) >/dev/null 2>&1; then \
+		echo "[*] Attempting to extract vmlinux.h from /sys/kernel/btf/vmlinux..."; \
+		(sudo $(BPFTOOL) btf dump file /sys/kernel/btf/vmlinux format c 2>/dev/null || \
+		 $(BPFTOOL) btf dump file /sys/kernel/btf/vmlinux format c 2>/dev/null) > bpf/headers/vmlinux.h || \
+		(echo "[!] Warning: BTF dump extraction failed, using portable CO-RE base." && cp bpf/headers/vmlinux_base.h bpf/headers/vmlinux.h); \
+	else \
+		echo "[*] Using portable CO-RE base header (bpf/headers/vmlinux_base.h)..."; \
+		cp bpf/headers/vmlinux_base.h bpf/headers/vmlinux.h; \
+	fi
+	@echo "[✓] bpf/headers/vmlinux.h ready."
 
 bpf: $(BPF_SRC)
 	@if [ ! -f bpf/headers/vmlinux.h ]; then \

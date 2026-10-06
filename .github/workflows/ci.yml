@@ -32,28 +32,24 @@ jobs:
             clang \
             llvm \
             libbpf-dev \
-            linux-tools-common \
-            linux-tools-generic \
             make \
             gcc \
             pkg-config
 
-          # Ensure bpftool binary is linked on PATH
+          # Attempt to install bpftool or linux-tools packages
+          sudo apt-get install -y bpftool 2>/dev/null || \
+          sudo apt-get install -y linux-tools-common linux-tools-generic 2>/dev/null || true
+
+          # If bpftool is located in linux-tools, link it to PATH
           if ! command -v bpftool &>/dev/null; then
             TOOL_PATH=$(find /usr/lib/linux-tools/ -name bpftool 2>/dev/null | head -n 1 || true)
             if [ -n "$TOOL_PATH" ]; then
-              echo "Linking $TOOL_PATH to /usr/local/bin/bpftool"
               sudo ln -sf "$TOOL_PATH" /usr/local/bin/bpftool
             fi
           fi
 
-      - name: Verify Kernel BTF & Generate vmlinux.h
-        run: |
-          if [ -f /sys/kernel/btf/vmlinux ] && command -v bpftool &>/dev/null; then
-            make vmlinux
-          else
-            echo "Kernel BTF not available directly in runner environment; using fallback or skipping vmlinux dump"
-          fi
+      - name: Prepare Kernel Headers (vmlinux.h)
+        run: make vmlinux
 
       - name: Compile eBPF Bytecode
         run: make bpf
