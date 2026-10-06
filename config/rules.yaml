@@ -1,0 +1,95 @@
+# kshield Intrusion Detection Rules
+# Baseline ruleset mapped to MITRE ATT&CK techniques
+version: "1.0"
+rules:
+  - id: "KSHIELD-001"
+    name: "Interactive / Reverse Shell Execution"
+    description: "Detects interactive shell invocations commonly utilized in reverse shells or post-exploitation payloads"
+    severity: "CRITICAL"
+    event_type: "execve"
+    mitre_technique: "T1059.004"
+    action: "ALERT"
+    conditions:
+      args_pattern: "(\\b(sh|bash|zsh)\\s+-i|/dev/tcp/|/dev/udp/|mkfifo|nc.*-e)"
+
+  - id: "KSHIELD-002"
+    name: "Suspicious Piped Shell Execution"
+    description: "Detects base64 encoded scripts or curl/wget download piped directly into a shell interpreter"
+    severity: "HIGH"
+    event_type: "execve"
+    mitre_technique: "T1059.004"
+    action: "ALERT"
+    conditions:
+      args_pattern: "(curl.*\\|.*(sh|bash)|wget.*\\|.*(sh|bash)|base64\\s+-d.*\\|)"
+
+  - id: "KSHIELD-003"
+    name: "Sensitive Credential Access: /etc/shadow"
+    description: "Detects attempts to open or read /etc/shadow password hashes"
+    severity: "CRITICAL"
+    event_type: "openat"
+    mitre_technique: "T1003.008"
+    action: "ALERT"
+    conditions:
+      target_paths:
+        - "/etc/shadow"
+        - "/etc/gshadow"
+      exclude_users:
+        - "passwd"
+
+  - id: "KSHIELD-004"
+    name: "Private Key / Cloud Credential Exposure"
+    description: "Detects file open operations accessing private SSH keys or AWS cloud credentials"
+    severity: "HIGH"
+    event_type: "openat"
+    mitre_technique: "T1552.004"
+    action: "ALERT"
+    conditions:
+      target_paths:
+        - ".ssh/id_rsa"
+        - ".ssh/id_ed25519"
+        - ".ssh/id_ecdsa"
+        - ".aws/credentials"
+        - ".config/gcloud/credentials.db"
+
+  - id: "KSHIELD-005"
+    name: "Privilege Escalation Artifact Access: /etc/sudoers"
+    description: "Monitors reads or modifications to the system sudoers configuration file"
+    severity: "MEDIUM"
+    event_type: "openat"
+    mitre_technique: "T1548.003"
+    action: "ALERT"
+    conditions:
+      target_paths:
+        - "/etc/sudoers"
+        - "/etc/sudoers.d/"
+
+  - id: "KSHIELD-006"
+    name: "Outbound Connection to Known Backdoor / C2 Ports"
+    description: "Detects outbound network connection attempts targeting standard reverse shell and C2 listener ports"
+    severity: "HIGH"
+    event_type: "connect"
+    mitre_technique: "T1571"
+    action: "ALERT"
+    conditions:
+      target_ports:
+        - 4444
+        - 1337
+        - 31337
+        - 6667
+        - 9001
+        - 8888
+
+  - id: "KSHIELD-007"
+    name: "Offensive Reconnaissance Tool Execution"
+    description: "Detects execution of automated network scanners or privilege escalation enumeration scripts"
+    severity: "MEDIUM"
+    event_type: "execve"
+    mitre_technique: "T1046"
+    action: "ALERT"
+    conditions:
+      process_names:
+        - "nmap"
+        - "masscan"
+        - "linpeas"
+        - "chisel"
+        - "hydra"

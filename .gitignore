@@ -1,0 +1,52 @@
+# ==============================================================================
+# kshield - Git Ignore Configuration
+# ==============================================================================
+
+# Compiled Go Binaries and Packages
+bin/
+dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+test_kshield*
+
+# Compiled eBPF Objects & Artifacts
+*.o
+bpf/*.o
+internal/bpf/*.o
+internal/bpf/*_bpfel.go
+internal/bpf/*_bpfeb.go
+
+# Dynamically Generated Kernel BTF Headers
+bpf/headers/vmlinux.h
+
+# Profiling, Coverage and Test Artifacts
+coverage.out
+coverage.html
+*.pprof
+cpu.pprof
+mem.pprof
+
+# IDE and Editor Configurations
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# OS and Filesystem Metadata
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# Local Environment & Secrets
+.env
+.env.local
+*.local
